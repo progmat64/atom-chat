@@ -1,0 +1,416 @@
+openapi: 3.0.0
+info:
+  title: Чат API
+  version: 1.0.0
+  description: API для чат-приложения, позволяющего пользователям общаться в приватных каналах.
+servers:
+  - url: https://api.example.com
+paths:
+  /api/register/:
+    post:
+      summary: Регистрация пользователя
+      description: Создает нового пользователя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Некорректный запрос
+  /api/login/:
+    post:
+      summary: Авторизация пользователя
+      description: Аутентифицирует пользователя и возвращает JWT токен.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          description: Неверные учетные данные
+  /api/users/{user_id}/:
+    get:
+      summary: Получить информацию о пользователе
+      description: Возвращает информацию о пользователе по его ID.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+    put:
+      summary: Обновить информацию о пользователе
+      description: Обновляет данные пользователя. Доступно владельцу аккаунта или модератору.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Пользователь успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Некорректный запрос
+        '403':
+          description: Доступ запрещен
+  /api/channels/:
+    get:
+      summary: Получить список каналов
+      description: Возвращает список каналов текущего пользователя.
+      responses:
+        '200':
+          description: Список каналов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Channel'
+    post:
+      summary: Создать новый канал
+      description: Создает новый приватный канал.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelCreate'
+      responses:
+        '201':
+          description: Канал успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '400':
+          description: Некорректный запрос
+  /api/channels/{channel_id}/:
+    get:
+      summary: Получить информацию о канале
+      description: Возвращает информацию о канале по его ID.
+      parameters:
+        - in: path
+          name: channel_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Информация о канале
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '404':
+          description: Канал не найден
+    put:
+      summary: Обновить канал
+      description: Обновляет информацию о канале. Доступно участникам канала или модератору.
+      parameters:
+        - in: path
+          name: channel_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelUpdate'
+      responses:
+        '200':
+          description: Канал успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '400':
+          description: Некорректный запрос
+        '403':
+          description: Доступ запрещен
+    delete:
+      summary: Удалить канал
+      description: Удаляет канал. Доступно только модератору.
+      parameters:
+        - in: path
+          name: channel_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '204':
+          description: Канал успешно удален
+        '403':
+          description: Доступ запрещен
+  /api/channels/{channel_id}/messages/:
+    get:
+      summary: Получить историю сообщений
+      description: Возвращает историю сообщений канала.
+      parameters:
+        - in: path
+          name: channel_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+          description: Количество сообщений
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+          description: Смещение для пагинации
+      responses:
+        '200':
+          description: История сообщений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '404':
+          description: Канал не найден
+    post:
+      summary: Отправить сообщение
+      description: Отправляет новое сообщение в канал.
+      parameters:
+        - in: path
+          name: channel_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreate'
+      responses:
+        '201':
+          description: Сообщение успешно отправлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Некорректный запрос
+        '403':
+          description: Доступ запрещен
+  /api/users/{user_id}/block/:
+    post:
+      summary: Заблокировать пользователя
+      description: Блокирует пользователя. Доступно только модератору.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Пользователь успешно заблокирован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '403':
+          description: Доступ запрещен
+  /api/blocked_users/:
+    get:
+      summary: Получить список заблокированных пользователей
+      description: Возвращает список заблокированных пользователей. Доступно только модератору.
+      responses:
+        '200':
+          description: Список заблокированных пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          description: Доступ запрещен
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserRegistration:
+      type: object
+      required:
+        - email
+        - username
+        - first_name
+        - last_name
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        password:
+          type: string
+          format: password
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        is_moderator:
+          type: boolean
+        is_blocked:
+          type: boolean
+    UserUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        password:
+          type: string
+          format: password
+    Channel:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    ChannelCreate:
+      type: object
+      required:
+        - name
+        - participants
+      properties:
+        name:
+          type: string
+        participants:
+          type: array
+          items:
+            type: integer
+    ChannelUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        participants:
+          type: array
+          items:
+            type: integer
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        author:
+          $ref: '#/components/schemas/User'
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    MessageCreate:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+security:
+  - BearerAuth: []
